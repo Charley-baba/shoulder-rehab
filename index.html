@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>肩膀復健量角器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E9EEEC; --surface:#F7F9F8; --ink:#1C2B2E; --muted:#5B6B6E; --line:#C9D3D1;
+  --accent:#2B6E8C; --accent-ink:#FFFFFF; --peak:#C9861C; --danger:#B0453A; --soft:#DCE6E4;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#10181A; --surface:#182326; --ink:#E3ECEA; --muted:#93A4A6; --line:#2B3A3D;
+    --accent:#5BA8C9; --accent-ink:#0B1416; --peak:#E9AE4E; --danger:#E07A6E; --soft:#1F2D30;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10181A; --surface:#182326; --ink:#E3ECEA; --muted:#93A4A6; --line:#2B3A3D;
+  --accent:#5BA8C9; --accent-ink:#0B1416; --peak:#E9AE4E; --danger:#E07A6E; --soft:#1F2D30;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Noto Sans TC","PingFang TC","Heiti TC","Microsoft JhengHei",sans-serif;
+  font-size:16px;line-height:1.6;-webkit-text-size-adjust:100%}
+.num{font-family:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+main{max-width:560px;margin:0 auto;padding:12px 16px calc(96px + env(safe-area-inset-bottom,0px))}
+header.top{display:flex;align-items:baseline;justify-content:space-between;max-width:560px;margin:0 auto;padding:14px 16px 4px}
+header.top h1{font-size:20px;margin:0;font-weight:700;letter-spacing:.02em}
+header.top .today{color:var(--muted);font-size:14px}
+section.view{display:none}
+section.view.active{display:block}
+h2{font-size:17px;margin:20px 0 8px;font-weight:700}
+p{margin:6px 0}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+button{font:inherit;color:inherit;cursor:pointer;border:none;background:none}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* exercise picker */
+.chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;padding:8px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:15px;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.chip .tag{font-size:12px;opacity:.75;margin-left:4px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.seg button{padding:6px 16px;font-size:15px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.between{justify-content:space-between}
+.place{background:var(--soft);border-radius:12px;padding:10px 14px;font-size:15px;margin:8px 0}
+.place .link{color:var(--danger);font-size:14px;text-decoration:underline;margin-top:4px}
+
+/* dial */
+.dialwrap{position:relative;margin:10px 0 0}
+.dial{width:100%;height:auto;display:block}
+.dial .tick{stroke:var(--line)}
+.dial .tick.major{stroke:var(--muted)}
+.dial .lbl{fill:var(--muted);font-size:11px;font-family:"Barlow Condensed",sans-serif}
+.dial .track{stroke:var(--soft)}
+.dial .fill{stroke:var(--accent)}
+.dial .needle{stroke:var(--ink)}
+.dial .peak{fill:var(--peak)}
+.dial .hub{fill:var(--ink)}
+.readout{position:absolute;left:0;right:0;bottom:4px;text-align:center;pointer-events:none}
+.readout .big{font-size:64px;line-height:1;font-weight:600}
+.readout .big sup{font-size:28px;vertical-align:top;margin-left:2px}
+.readout .peakline{font-size:14px;color:var(--muted)}
+.readout .peakline b{color:var(--peak);font-weight:600}
+.status{font-size:14px;color:var(--muted);text-align:center;margin:6px 0}
+.status.warn{color:var(--danger)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:15px;font-weight:500}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-size:18px;font-weight:700;padding:14px 18px;width:100%}
+.btn.danger{color:var(--danger)}
+.btn:disabled{opacity:.45}
+.btns{display:flex;gap:8px;justify-content:center;margin:8px 0}
+
+/* settings */
+.settings{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.stepper{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.stepper .name{font-size:13px;color:var(--muted)}
+.stepper .ctl{display:flex;align-items:center;justify-content:space-between}
+.stepper .ctl button{width:36px;height:36px;border-radius:10px;background:var(--soft);font-size:20px;line-height:1}
+.stepper .val{font-size:26px;font-weight:600}
+.stepper .unit{font-size:13px;color:var(--muted);margin-left:2px}
+.toggle{display:flex;align-items:center;gap:8px;font-size:15px}
+.toggle input{width:20px;height:20px;accent-color:var(--accent)}
+
+/* run panel */
+.run{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0;text-align:center}
+.run .phase{font-size:16px;font-weight:700}
+.run .phase.hold{color:var(--accent)}
+.run .count{font-size:88px;line-height:1;font-weight:600;margin:4px 0}
+.run .sub{color:var(--muted);font-size:14px}
+.bar{height:6px;background:var(--soft);border-radius:3px;overflow:hidden;margin:10px 0 4px}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s linear}
+@media (prefers-reduced-motion:reduce){.bar i{transition:none}}
+
+/* reps list */
+.reps{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.rep{background:var(--soft);border-radius:8px;padding:4px 10px;font-size:14px}
+.rep b{font-family:"Barlow Condensed",sans-serif;font-size:18px;font-weight:600;margin-left:4px}
+.rep.best{outline:2px solid var(--peak)}
+
+/* finish */
+.finish{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin:12px 0}
+.finish h3{margin:0 0 6px;font-size:17px}
+.pain{display:flex;gap:4px;flex-wrap:wrap;margin:6px 0}
+.pain button{width:36px;height:36px;border-radius:10px;background:var(--soft);font-family:"Barlow Condensed",sans-serif;font-size:18px;font-weight:600}
+.pain button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.editreps{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:6px;margin:6px 0}
+.editreps label{font-size:13px;color:var(--muted)}
+.editreps input{width:100%;font:inherit;font-size:18px;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+textarea,input[type=text]{width:100%;font:inherit;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+
+/* records */
+.day{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin:10px 0}
+.day .dhead{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:6px}
+.day .dhead .d{font-weight:700}
+.sess{padding:8px 0;border-bottom:1px dashed var(--line)}
+.sess:last-child{border-bottom:none}
+.sess .sh{display:flex;justify-content:space-between;gap:8px;font-size:15px}
+.sess .sh .t{color:var(--muted)}
+.sess .del{color:var(--danger);font-size:13px}
+.empty{text-align:center;color:var(--muted);padding:40px 10px}
+
+/* progress */
+.chartbox{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px;margin:10px 0}
+.chart{width:100%;height:auto;display:block}
+.chart .grid{stroke:var(--line)}
+.chart .ax{fill:var(--muted);font-size:10px;font-family:"Barlow Condensed",sans-serif}
+.chart .lr{stroke:var(--accent);fill:none;stroke-width:2.5}
+.chart .ll{stroke:var(--muted);fill:none;stroke-width:1.5;stroke-dasharray:4 4}
+.chart .dr{fill:var(--accent)}
+.chart .dl{fill:var(--muted)}
+.chart .val{fill:var(--ink);font-size:10px;font-family:"Barlow Condensed",sans-serif}
+.legend{display:flex;gap:16px;font-size:13px;color:var(--muted);margin:4px 4px 0}
+.legend span::before{content:"";display:inline-block;width:14px;height:3px;vertical-align:middle;margin-right:6px;background:var(--accent)}
+.legend span.l::before{background:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.stat .k{font-size:13px;color:var(--muted)}
+.stat .v{font-size:28px;font-weight:600;line-height:1.1}
+.stat .v.up{color:var(--accent)}
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:500}
+
+/* tab bar */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);
+  display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);z-index:20}
+nav.tabs .in{display:flex;max-width:560px;width:100%}
+nav.tabs button{flex:1;padding:10px 0 12px;font-size:15px;color:var(--muted);font-weight:500;border-top:3px solid transparent}
+nav.tabs button[aria-current="page"]{color:var(--ink);border-top-color:var(--accent);font-weight:700}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:10px;font-size:14px;z-index:30;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+.addform{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;margin:8px 0;display:none}
+.addform.open{display:block}
+.addform > *{margin:6px 0}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:40}
+.modal.open{display:flex}
+.modal .box{background:var(--surface);border-radius:16px;padding:16px;max-width:520px;width:100%}
+.modal textarea{height:200px;font-size:12px}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>肩膀復健量角器</h1>
+  <span class="today" id="today"></span>
+</header>
+
+<main>
+<!-- 復健 -->
+<section class="view active" id="v-rehab">
+  <div class="chips" id="exChips" role="group" aria-label="選擇復健動作"></div>
+  <div class="addform" id="addForm">
+    <input type="text" id="newName" placeholder="動作名稱，例如：側躺外旋" maxlength="30">
+    <label class="toggle"><input type="checkbox" id="newMeasure" checked> 用手機量角度</label>
+    <textarea id="newPlace" rows="2" placeholder="手機擺放方式與歸零位置"></textarea>
+    <div class="row"><button class="btn" id="addSave">新增動作</button><button class="btn" id="addCancel">取消</button></div>
+  </div>
+  <div class="row between">
+    <div class="seg" role="group" aria-label="側別">
+      <button data-side="R" aria-pressed="true">右手</button><button data-side="L" aria-pressed="false">左手</button>
+    </div>
+    <span class="small muted" id="todayCount"></span>
+  </div>
+  <div class="place" id="place"></div>
+
+  <div id="measureArea">
+    <div class="dialwrap">
+      <svg class="dial" id="dial" viewBox="0 0 300 172" aria-hidden="true"></svg>
+      <div class="readout">
+        <div class="big num"><span id="angle">--</span><sup>°</sup></div>
+        <div class="peakline" id="peakline">這一下最大 <b class="num" id="peakVal">--</b>°</div>
+      </div>
+    </div>
+    <div class="status" id="status">按「啟用感測器」開始讀取角度</div>
+    <div class="btns">
+      <button class="btn" id="btnSensor">啟用感測器</button>
+      <button class="btn" id="btnZero" disabled>歸零</button>
+    </div>
+  </div>
+
+  <div class="run" id="runPanel" hidden>
+    <div class="phase" id="phase">準備</div>
+    <div class="count num" id="count">5</div>
+    <div class="bar"><i id="barFill"></i></div>
+    <div class="sub" id="runSub"></div>
+    <div class="reps" id="liveReps"></div>
+    <div class="btns">
+      <button class="btn" id="btnSkip">跳過這段</button>
+      <button class="btn danger" id="btnStop">結束並儲存</button>
+    </div>
+  </div>
+
+  <div id="setupArea">
+    <div class="settings">
+      <div class="stepper" data-key="hold"><div class="name">每下停留</div><div class="ctl"><button aria-label="減少">−</button><span><span class="val num"></span><span class="unit">秒</span></span><button aria-label="增加">+</button></div></div>
+      <div class="stepper" data-key="reps"><div class="name">次數</div><div class="ctl"><button aria-label="減少">−</button><span><span class="val num"></span><span class="unit">下</span></span><button aria-label="增加">+</button></div></div>
+      <div class="stepper" data-key="prep"><div class="name">開始前準備</div><div class="ctl"><button aria-label="減少">−</button><span><span class="val num"></span><span class="unit">秒</span></span><button aria-label="增加">+</button></div></div>
+      <div class="stepper" data-key="rest"><div class="name">每下之間休息</div><div class="ctl"><button aria-label="減少">−</button><span><span class="val num"></span><span class="unit">秒</span></span><button aria-label="增加">+</button></div></div>
+    </div>
+    <label class="toggle" style="margin-bottom:10px"><input type="checkbox" id="voice"> 語音提示（開始、放鬆、角度）</label>
+    <button class="btn primary" id="btnStart">開始</button>
+  </div>
+
+  <div class="finish" id="finish" hidden>
+    <h3>這組完成了</h3>
+    <p class="small muted" id="finishSub"></p>
+    <div id="finishReps"></div>
+    <p class="small" style="margin-top:10px">今天這組的疼痛程度（0 不痛，10 最痛）</p>
+    <div class="pain" id="pain"></div>
+    <textarea id="note" rows="2" placeholder="備註，例如：熱敷後做、夜間痛減少"></textarea>
+    <div class="btns"><button class="btn" id="btnFinishDone">完成</button></div>
+  </div>
+</section>
+
+<!-- 紀錄 -->
+<section class="view" id="v-log">
+  <div class="row between"><h2>復健紀錄</h2><button class="btn" id="btnExport">匯出 CSV</button></div>
+  <div id="logList"></div>
+</section>
+
+<!-- 進度 -->
+<section class="view" id="v-progress">
+  <h2>進度</h2>
+  <div class="chips" id="progChips" role="group" aria-label="選擇要看的動作"></div>
+  <div id="progBody"></div>
+</section>
+</main>
+
+<nav class="tabs" aria-label="主選單"><div class="in">
+  <button data-view="rehab" aria-current="page">復健</button>
+  <button data-view="log">紀錄</button>
+  <button data-view="progress">進度</button>
+</div></nav>
+
+<div class="toast" id="toast" role="status"></div>
+<div class="modal" id="csvModal"><div class="box">
+  <p class="small">這個畫面無法直接下載檔案。請全選下面的內容複製，貼到「備忘錄」或試算表。</p>
+  <textarea id="csvText" readonly></textarea>
+  <div class="btns"><button class="btn" id="csvCopy">複製</button><button class="btn" id="csvClose">關閉</button></div>
+</div></div>
+
+<script>
+(function(){
+"use strict";
+var KEY="shoulderRehab.v1";
+var BUILTIN=[
+ {id:"er-supine",name:"仰躺棍棒外旋",measure:true,place:"平躺，右手肘彎 90 度貼在身側。手機直立、長邊貼著前臂綁好，螢幕朝向你的腳。前臂垂直朝天花板時按「歸零」，再往外轉。"},
+ {id:"er-door",name:"門框外旋",measure:false,place:"站姿、水平方向的動作，手機無法量角度，這個動作只計時。角度請用「仰躺棍棒外旋」量。"},
+ {id:"elbow-open",name:"仰躺抱頭開肘",measure:true,place:"平躺，雙手抱頭。手機綁在右上臂，螢幕朝向你的腳。手肘朝天花板時按「歸零」，再讓手肘往床面打開。"},
+ {id:"cross-body",name:"橫過胸前伸展",measure:true,place:"量角度時改成仰躺：手臂伸直朝天花板，手機綁在上臂、螢幕朝向你的腳，此時按「歸零」，再把手臂往左側帶。"},
+ {id:"towel",name:"毛巾背後上拉",measure:false,place:"手機無法量測這個動作，只計時。可以每週在背後貼膠帶刻度拍照比較。"},
+ {id:"flexion",name:"仰躺棍棒舉手",measure:true,place:"平躺，手臂放在身側。手機綁在前臂，螢幕朝向身體外側。手臂貼床時按「歸零」，再往頭頂方向舉。"}
+];
+var LIMITS={hold:[5,120,5],reps:[1,20,1],prep:[0,30,1],rest:[0,60,5]};
+var store={sessions:[],custom:[],settings:{hold:30,reps:5,prep:5,rest:10,voice:true,exId:"er-supine",side:"R"}};
+
+function load(){try{var raw=localStorage.getItem(KEY);if(raw){var d=JSON.parse(raw);if(d&&typeof d==="object"){store.sessions=d.sessions||[];store.custom=d.custom||[];for(var k in d.settings){store.settings[k]=d.settings[k];}}}}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(store));}catch(e){toast("無法儲存到這支手機，請確認未使用私密瀏覽");}}
+load();
+
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]})}
+function pad(n){return n<10?"0"+n:""+n}
+function dateKey(ts){var d=new Date(ts);return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function timeStr(ts){var d=new Date(ts);return pad(d.getHours())+":"+pad(d.getMinutes())}
+var WD=["日","一","二","三","四","五","六"];
+function dateLabel(key){var p=key.split("-");var d=new Date(+p[0],+p[1]-1,+p[2]);return (+p[1])+"月"+(+p[2])+"日（"+WD[d.getDay()]+"）"}
+function allEx(){return BUILTIN.concat(store.custom)}
+function getEx(id){var a=allEx();for(var i=0;i<a.length;i++)if(a[i].id===id)return a[i];return BUILTIN[0]}
+var tt;function toast(m){var t=$("toast");t.textContent=m;t.classList.add("show");clearTimeout(tt);tt=setTimeout(function(){t.classList.remove("show")},2200)}
+$("today").textContent=dateLabel(dateKey(Date.now()));
+
+/* ---------- dial ---------- */
+var CX=150,CY=150,R=128;
+function pt(a,r){var rad=a*Math.PI/180;return [CX-r*Math.cos(rad),CY-r*Math.sin(rad)]}
+function arcPath(a0,a1,r){var p0=pt(a0,r),p1=pt(a1,r);var large=(a1-a0)>180?1:0;return "M"+p0[0].toFixed(1)+" "+p0[1].toFixed(1)+" A"+r+" "+r+" 0 "+large+" 1 "+p1[0].toFixed(1)+" "+p1[1].toFixed(1)}
+(function buildDial(){
+  var s='<path class="track" d="'+arcPath(0,180,R)+'" fill="none" stroke-width="10" stroke-linecap="round"/>';
+  s+='<path class="fill" id="dFill" d="" fill="none" stroke-width="10" stroke-linecap="round"/>';
+  for(var a=0;a<=180;a+=5){var major=a%30===0;var p0=pt(a,R-10),p1=pt(a,R-(major?22:16));
+    s+='<line class="tick'+(major?" major":"")+'" x1="'+p0[0].toFixed(1)+'" y1="'+p0[1].toFixed(1)+'" x2="'+p1[0].toFixed(1)+'" y2="'+p1[1].toFixed(1)+'" stroke-width="'+(major?1.5:1)+'"/>';
+    if(major){var pl=pt(a,R-33);s+='<text class="lbl" x="'+pl[0].toFixed(1)+'" y="'+(pl[1]+4).toFixed(1)+'" text-anchor="middle">'+a+'</text>';}}
+  s+='<line class="needle" id="dNeedle" x1="150" y1="150" x2="22" y2="150" stroke-width="2.5" stroke-linecap="round"/>';
+  s+='<polygon class="peak" id="dPeak" points="0,0" style="display:none"/>';
+  s+='<circle class="hub" cx="150" cy="150" r="5"/>';
+  $("dial").innerHTML=s;
+})();
+function drawDial(a,peak){
+  var c=Math.max(0,Math.min(180,a));
+  $("dFill").setAttribute("d",c>0.5?arcPath(0,c,R):"");
+  var tip=pt(c,R-26);var n=$("dNeedle");n.setAttribute("x2",tip[0].toFixed(1));n.setAttribute("y2",tip[1].toFixed(1));
+  var pk=$("dPeak");
+  if(peak!=null){var pc=Math.max(0,Math.min(180,peak));var o=pt(pc,R+12),l=pt(pc-3,R+22),r2=pt(pc+3,R+22);
+    pk.setAttribute("points",o[0].toFixed(1)+","+o[1].toFixed(1)+" "+l[0].toFixed(1)+","+l[1].toFixed(1)+" "+r2[0].toFixed(1)+","+r2[1].toFixed(1));pk.style.display="";}
+  else pk.style.display="none";
+}
+drawDial(0,null);
+
+/* ---------- sensor ---------- */
+var sensor={on:false,gx:0,gy:0,gz:0,init:false,zero:null,last:0,raw:0,angle:null};
+function onMotion(e){
+  var g=e.accelerationIncludingGravity;if(!g||g.x==null)return;
+  var k=0.2;
+  if(!sensor.init){sensor.gx=g.x;sensor.gy=g.y;sensor.gz=g.z;sensor.init=true}
+  else{sensor.gx+=k*(g.x-sensor.gx);sensor.gy+=k*(g.y-sensor.gy);sensor.gz+=k*(g.z-sensor.gz)}
+  sensor.last=Date.now();
+}
+function wrap(d){while(d>180)d-=360;while(d<-180)d+=360;return d}
+function readAngle(){
+  if(!sensor.init)return null;
+  sensor.raw=Math.atan2(sensor.gx,sensor.gy)*180/Math.PI;
+  if(sensor.zero==null)return null;
+  return Math.abs(wrap(sensor.raw-sensor.zero));
+}
+function planeOK(){var inPlane=Math.sqrt(sensor.gx*sensor.gx+sensor.gy*sensor.gy);var tot=Math.sqrt(inPlane*inPlane+sensor.gz*sensor.gz)||1;return inPlane/tot>0.75}
+$("btnSensor").addEventListener("click",function(){
+  var start=function(){window.addEventListener("devicemotion",onMotion);sensor.on=true;$("btnSensor").textContent="感測器已啟用";$("btnSensor").disabled=true;$("btnZero").disabled=false;
+    setTimeout(function(){if(!sensor.init){setStatus("沒有收到感測器資料。請用 iPhone 的 Safari 直接開啟這個頁面，並允許「動作與方向」。",true)}},2500);};
+  try{
+    if(typeof DeviceMotionEvent!=="undefined"&&typeof DeviceMotionEvent.requestPermission==="function"){
+      DeviceMotionEvent.requestPermission().then(function(r){if(r==="granted")start();else setStatus("沒有取得「動作與方向」權限，無法量角度。仍可只計時，結束後手動輸入角度。",true)}).catch(function(){setStatus("無法要求感測器權限。請用 Safari 直接開啟這個頁面。",true)});
+    }else if(typeof DeviceMotionEvent!=="undefined"){start();}
+    else setStatus("這個瀏覽器不支援動作感測器。仍可只計時，結束後手動輸入角度。",true);
+  }catch(err){setStatus("無法啟用感測器："+err.message,true)}
+});
+$("btnZero").addEventListener("click",function(){
+  if(!sensor.init){toast("還沒有收到感測器資料");return}
+  sensor.zero=Math.atan2(sensor.gx,sensor.gy)*180/Math.PI;toast("已歸零");
+});
+function setStatus(m,warn){var s=$("status");s.textContent=m;s.classList.toggle("warn",!!warn)}
+
+/* ---------- audio / voice ---------- */
+var actx=null;
+function unlockAudio(){try{if(!actx){var C=window.AudioContext||window.webkitAudioContext;if(C)actx=new C()}if(actx&&actx.state==="suspended")actx.resume()}catch(e){}}
+function beep(freq,dur){if(!actx)return;try{var o=actx.createOscillator(),g=actx.createGain();o.frequency.value=freq;o.connect(g);g.connect(actx.destination);var t=actx.currentTime;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(0.3,t+0.01);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.start(t);o.stop(t+dur+0.02)}catch(e){}}
+function say(text){if(!store.settings.voice||!("speechSynthesis" in window))return;try{speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(text);u.lang="zh-TW";u.rate=1.05;speechSynthesis.speak(u)}catch(e){}}
+var wakeLock=null;
+function keepAwake(on){try{if(on&&navigator.wakeLock){navigator.wakeLock.request("screen").then(function(w){wakeLock=w}).catch(function(){})}else if(!on&&wakeLock){wakeLock.release();wakeLock=null}}catch(e){}}
+
+/* ---------- rehab view ---------- */
+function renderChips(){
+  var h="";allEx().forEach(function(x){h+='<button class="chip" data-ex="'+esc(x.id)+'" aria-pressed="'+(x.id===store.settings.exId)+'">'+esc(x.name)+(x.measure?"":'<span class="tag">計時</span>')+'</button>'});
+  h+='<button class="chip" id="chipAdd">＋ 新增動作</button>';
+  $("exChips").innerHTML=h;
+}
+function renderPlace(){
+  var x=getEx(store.settings.exId);
+  var h=esc(x.place||"");
+  if(x.custom)h+='<div><button class="link" id="delEx">刪除這個自訂動作</button></div>';
+  $("place").innerHTML=h;
+  $("measureArea").style.display=x.measure?"":"none";
+  $("btnStart").textContent="開始 "+store.settings.reps+" 下 × "+store.settings.hold+" 秒";
+}
+function renderSettings(){
+  document.querySelectorAll(".stepper").forEach(function(el){el.querySelector(".val").textContent=store.settings[el.dataset.key]});
+  $("voice").checked=!!store.settings.voice;
+  document.querySelectorAll(".seg button").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.side===store.settings.side)});
+}
+function renderTodayCount(){
+  var k=dateKey(Date.now());var s=0,r=0;store.sessions.forEach(function(x){if(x.date===k){s++;r+=x.reps.length}});
+  $("todayCount").textContent=s?("今天已做 "+s+" 組、"+r+" 下"):"今天還沒有紀錄";
+}
+$("exChips").addEventListener("click",function(e){
+  var b=e.target.closest("button");if(!b||run)return;
+  if(b.id==="chipAdd"){$("addForm").classList.add("open");$("newName").focus();return}
+  store.settings.exId=b.dataset.ex;save();renderChips();renderPlace();resetPeak();
+});
+$("place").addEventListener("click",function(e){
+  if(e.target.id!=="delEx")return;var x=getEx(store.settings.exId);
+  if(!confirm("刪除自訂動作「"+x.name+"」？已存的紀錄會保留。"))return;
+  store.custom=store.custom.filter(function(c){return c.id!==x.id});store.settings.exId=BUILTIN[0].id;save();renderChips();renderPlace();renderProgChips();
+});
+$("addCancel").addEventListener("click",function(){$("addForm").classList.remove("open")});
+$("addSave").addEventListener("click",function(){
+  var n=$("newName").value.trim();if(!n){toast("請輸入動作名稱");return}
+  var x={id:"c"+Date.now(),name:n,measure:$("newMeasure").checked,place:$("newPlace").value.trim()||"自訂動作",custom:true};
+  store.custom.push(x);store.settings.exId=x.id;save();
+  $("newName").value="";$("newPlace").value="";$("addForm").classList.remove("open");
+  renderChips();renderPlace();renderProgChips();toast("已新增「"+n+"」");
+});
+document.querySelector(".seg").addEventListener("click",function(e){var b=e.target.closest("button");if(!b||run)return;store.settings.side=b.dataset.side;save();renderSettings()});
+document.querySelectorAll(".stepper").forEach(function(el){
+  var key=el.dataset.key,L=LIMITS[key],btns=el.querySelectorAll("button");
+  btns[0].addEventListener("click",function(){store.settings[key]=Math.max(L[0],store.settings[key]-L[2]);save();renderSettings();renderPlace()});
+  btns[1].addEventListener("click",function(){store.settings[key]=Math.min(L[1],store.settings[key]+L[2]);save();renderSettings();renderPlace()});
+});
+$("voice").addEventListener("change",function(){store.settings.voice=this.checked;save()});
+
+/* live readout loop */
+var peak=null;
+function resetPeak(){peak=null;$("peakVal").textContent="--";}
+function tick(){
+  if(sensor.on&&sensor.init){
+    var a=readAngle();
+    if(a==null){$("angle").textContent="--";if(!run)setStatus("擺好起始姿勢後按「歸零」")}
+    else{
+      $("angle").textContent=Math.round(a);
+      if(run&&run.phase==="hold"){if(peak==null||a>peak)peak=a;$("peakVal").textContent=Math.round(peak)}
+      drawDial(a,peak);
+      if(!planeOK())setStatus("手機傾斜太多，請讓螢幕朝向規定的方向、保持側立",true);
+      else if(!run)setStatus("讀取中。可以先動一下確認角度有變化");
+      else setStatus("");
+    }
+    if(Date.now()-sensor.last>1500)setStatus("感測器資料中斷，請保持這個頁面在前景",true);
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+/* ---------- run machine ---------- */
+var run=null,timer=null;
+function startRun(){
+  unlockAudio();
+  var x=getEx(store.settings.exId);
+  if(x.measure&&sensor.on&&sensor.zero==null){toast("請先擺好起始姿勢並按「歸零」");return}
+  run={ex:x,side:store.settings.side,hold:store.settings.hold,total:store.settings.reps,reps:[],i:0,phase:null,end:0,dur:0,measured:x.measure&&sensor.on&&sensor.zero!=null,startTs:Date.now()};
+  $("setupArea").hidden=true;$("finish").hidden=true;$("runPanel").hidden=false;$("liveReps").innerHTML="";
+  keepAwake(true);
+  if(store.settings.prep>0)enter("prep",store.settings.prep);else enter("hold",run.hold);
+  timer=setInterval(step,200);step();
+}
+function enter(phase,sec){
+  run.phase=phase;run.dur=sec;run.end=performance.now()+sec*1000;run.lastSec=null;
+  var ph=$("phase");ph.classList.toggle("hold",phase==="hold");
+  if(phase==="prep"){ph.textContent="準備，擺好姿勢";say("準備")}
+  else if(phase==="hold"){resetPeak();ph.textContent="第 "+(run.i+1)+" 下，伸展停留中";beep(880,0.25);say("第"+(run.i+1)+"下，開始")}
+  else if(phase==="rest"){ph.textContent="休息，放鬆肩膀"}
+  $("runSub").textContent="共 "+run.total+" 下，已完成 "+run.reps.length+" 下";
+}
+function step(){
+  if(!run)return;
+  var left=Math.max(0,(run.end-performance.now())/1000);var sec=Math.ceil(left);
+  $("count").textContent=sec;
+  $("barFill").style.width=(run.dur?(100*(1-left/run.dur)):100)+"%";
+  if(run.phase==="hold"&&sec<=3&&sec>0&&run.lastSec!==sec){beep(660,0.12)}
+  run.lastSec=sec;
+  if(left<=0)advance();
+}
+function advance(){
+  if(run.phase==="hold"){
+    var v=run.measured&&peak!=null?Math.round(peak):null;
+    run.reps.push({n:run.i+1,max:v,sec:run.hold});
+    beep(520,0.35);say(v!=null?("放鬆，"+v+"度"):"放鬆");
+    renderLiveReps();run.i++;
+    if(run.i>=run.total){finishRun();return}
+    if(store.settings.rest>0)enter("rest",store.settings.rest);else enter("hold",run.hold);
+  }else{enter("hold",run.hold)}
+}
+function renderLiveReps(){
+  var best=bestOf(run.reps);var h="";
+  run.reps.forEach(function(r){h+='<span class="rep'+(r.max!=null&&r.max===best?" best":"")+'">第'+r.n+'下<b>'+(r.max!=null?r.max+"°":"✓")+'</b></span>'});
+  $("liveReps").innerHTML=h;
+}
+function bestOf(reps){var b=null;reps.forEach(function(r){if(r.max!=null&&(b==null||r.max>b))b=r.max});return b}
+$("btnSkip").addEventListener("click",function(){if(run){run.end=performance.now();step()}});
+$("btnStop").addEventListener("click",function(){
+  if(!run)return;
+  if(run.phase==="hold"){var el=run.dur-Math.max(0,(run.end-performance.now())/1000);if(el>=3){run.reps.push({n:run.i+1,max:run.measured&&peak!=null?Math.round(peak):null,sec:Math.round(el)})}}
+  finishRun();
+});
+var lastSession=null;
+function finishRun(){
+  clearInterval(timer);timer=null;keepAwake(false);
+  var r=run;run=null;resetPeak();
+  $("runPanel").hidden=true;$("setupArea").hidden=false;
+  if(!r.reps.length){toast("沒有完成任何一下，這組不儲存");return}
+  var s={id:"s"+Date.now(),ts:r.startTs,date:dateKey(r.startTs),exId:r.ex.id,exName:r.ex.name,measure:r.ex.measure,side:r.side,hold:r.hold,reps:r.reps,pain:null,note:""};
+  store.sessions.push(s);save();lastSession=s;
+  say("這組完成");
+  showFinish(s);renderTodayCount();renderLog();renderProgress();
+}
+function showFinish(s){
+  var best=bestOf(s.reps);
+  $("finishSub").textContent=s.exName+"・"+(s.side==="R"?"右手":"左手")+"，完成 "+s.reps.length+" 下"+(best!=null?"，最大 "+best+"°":"");
+  var h="";
+  if(s.measure){
+    h+='<p class="small muted">角度可手動修正（感測器沒開時也可以在這裡輸入）</p><div class="editreps">';
+    s.reps.forEach(function(r,i){h+='<div><label for="er'+i+'">第'+r.n+'下（度）</label><input id="er'+i+'" data-i="'+i+'" type="number" inputmode="numeric" min="0" max="180" value="'+(r.max!=null?r.max:"")+'"></div>'});
+    h+='</div>';
+  }else{h+='<div class="reps">'+s.reps.map(function(r){return '<span class="rep">第'+r.n+'下<b>'+r.sec+'秒</b></span>'}).join("")+'</div>'}
+  $("finishReps").innerHTML=h;
+  var p="";for(var i=0;i<=10;i++)p+='<button data-p="'+i+'" aria-pressed="false" class="num">'+i+'</button>';
+  $("pain").innerHTML=p;$("note").value="";
+  $("finish").hidden=false;$("finish").scrollIntoView({behavior:"smooth",block:"start"});
+}
+$("finishReps").addEventListener("change",function(e){
+  var inp=e.target;if(!lastSession||inp.dataset.i==null)return;
+  var v=inp.value===""?null:Math.max(0,Math.min(180,Math.round(+inp.value)));
+  lastSession.reps[+inp.dataset.i].max=v;save();renderLog();renderProgress();
+});
+$("pain").addEventListener("click",function(e){
+  var b=e.target.closest("button");if(!b||!lastSession)return;
+  lastSession.pain=+b.dataset.p;save();
+  $("pain").querySelectorAll("button").forEach(function(x){x.setAttribute("aria-pressed",x===b)});renderLog();
+});
+$("note").addEventListener("change",function(){if(lastSession){lastSession.note=this.value.trim();save();renderLog()}});
+$("btnFinishDone").addEventListener("click",function(){$("finish").hidden=true;lastSession=null;toast("已儲存到這支手機")});
+$("btnStart").addEventListener("click",startRun);
+
+/* ---------- log view ---------- */
+function renderLog(){
+  var list=store.sessions.slice().sort(function(a,b){return b.ts-a.ts});
+  if(!list.length){$("logList").innerHTML='<div class="empty">還沒有紀錄。到「復健」做完一組，結果會出現在這裡。</div>';return}
+  var groups={},order=[];
+  list.forEach(function(s){if(!groups[s.date]){groups[s.date]=[];order.push(s.date)}groups[s.date].push(s)});
+  var h="";
+  order.forEach(function(d){
+    var ss=groups[d],reps=0;ss.forEach(function(s){reps+=s.reps.length});
+    h+='<div class="day"><div class="dhead"><span class="d">'+dateLabel(d)+'</span><span class="small muted">'+ss.length+' 組・'+reps+' 下</span></div>';
+    ss.forEach(function(s){
+      var best=bestOf(s.reps);
+      h+='<div class="sess"><div class="sh"><span><span class="t num">'+timeStr(s.ts)+'</span>　'+esc(s.exName)+'・'+(s.side==="R"?"右":"左")+'</span><button class="del" data-del="'+esc(s.id)+'">刪除</button></div>';
+      h+='<div class="reps">'+s.reps.map(function(r){return '<span class="rep'+(r.max!=null&&r.max===best?" best":"")+'">第'+r.n+'下<b>'+(r.max!=null?r.max+"°":r.sec+"秒")+'</b></span>'}).join("")+'</div>';
+      var meta=[];if(best!=null)meta.push("最大 "+best+"°");meta.push("每下 "+s.hold+" 秒");if(s.pain!=null)meta.push("疼痛 "+s.pain+"/10");
+      h+='<div class="small muted">'+meta.join("，")+(s.note?"。"+esc(s.note):"")+'</div></div>';
+    });
+    h+='</div>';
+  });
+  $("logList").innerHTML=h;
+}
+$("logList").addEventListener("click",function(e){
+  var id=e.target.dataset&&e.target.dataset.del;if(!id)return;
+  if(!confirm("刪除這組紀錄？"))return;
+  store.sessions=store.sessions.filter(function(s){return s.id!==id});save();renderLog();renderProgress();renderTodayCount();
+});
+
+/* ---------- CSV export ---------- */
+function csv(){
+  var rows=[["日期","時間","動作","側別","第幾下","最大角度","停留秒數","疼痛分數","備註"]];
+  store.sessions.slice().sort(function(a,b){return a.ts-b.ts}).forEach(function(s){
+    s.reps.forEach(function(r){rows.push([s.date,timeStr(s.ts),s.exName,s.side==="R"?"右":"左",r.n,r.max!=null?r.max:"",r.sec,s.pain!=null?s.pain:"",s.note||""])});
+  });
+  return "\uFEFF"+rows.map(function(r){return r.map(function(c){c=String(c);return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c}).join(",")}).join("\n");
+}
+var downloadsP=null;
+try{if(window.claude&&typeof window.claude.use==="function")downloadsP=window.claude.use("downloads")}catch(e){}
+$("btnExport").addEventListener("click",function(){
+  if(!store.sessions.length){toast("還沒有紀錄可以匯出");return}
+  var text=csv(),name="肩膀復健紀錄-"+dateKey(Date.now())+".csv";
+  var fallback=function(){
+    try{var f=new File([text],name,{type:"text/csv"});
+      if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:name}).catch(function(err){if(err&&err.name!=="AbortError")showCsv(text)});return}}catch(e){}
+    showCsv(text);
+  };
+  if(!downloadsP){fallback();return}
+  Promise.race([downloadsP,new Promise(function(r){setTimeout(function(){r(null)},1500)})]).then(function(dl){
+    if(!dl){fallback();return}
+    dl.save({filename:name,data:text}).then(function(){toast("已匯出")}).catch(function(err){if(err&&err.code==="declined")return;fallback()});
+  }).catch(fallback);
+});
+function showCsv(t){$("csvText").value=t.replace(/^\uFEFF/,"");$("csvModal").classList.add("open")}
+$("csvClose").addEventListener("click",function(){$("csvModal").classList.remove("open")});
+$("csvCopy").addEventListener("click",function(){var ta=$("csvText");ta.select();
+  var done=function(){toast("已複製")};
+  try{if(navigator.clipboard){navigator.clipboard.writeText(ta.value).then(done).catch(function(){document.execCommand("copy");done()})}else{document.execCommand("copy");done()}}catch(e){toast("請長按選取後複製")}});
+
+/* ---------- progress view ---------- */
+var progEx=null;
+function measurableEx(){return allEx().filter(function(x){return x.measure})}
+function renderProgChips(){
+  var list=measurableEx();if(!progEx||!list.some(function(x){return x.id===progEx}))progEx=list.length?list[0].id:null;
+  $("progChips").innerHTML=list.map(function(x){return '<button class="chip" data-ex="'+esc(x.id)+'" aria-pressed="'+(x.id===progEx)+'">'+esc(x.name)+'</button>'}).join("");
+}
+$("progChips").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;progEx=b.dataset.ex;renderProgChips();renderProgress()});
+function dailyBest(exId,side){
+  var m={};store.sessions.forEach(function(s){if(s.exId!==exId||s.side!==side)return;var b=bestOf(s.reps);if(b==null)return;if(m[s.date]==null||b>m[s.date])m[s.date]=b});return m;
+}
+function renderProgress(){
+  if(!progEx){$("progBody").innerHTML='<div class="empty">沒有可以量角度的動作。</div>';return}
+  var R=dailyBest(progEx,"R"),L=dailyBest(progEx,"L");
+  var dates=Object.keys(R).concat(Object.keys(L)).filter(function(v,i,a){return a.indexOf(v)===i}).sort();
+  if(!dates.length){$("progBody").innerHTML='<div class="empty">這個動作還沒有角度紀錄。做完一組後，每天的最大角度會畫在這裡。</div>';return}
+  var rd=dates.filter(function(d){return R[d]!=null});
+  var first=rd.length?R[rd[0]]:null,lastV=rd.length?R[rd[rd.length-1]]:null,best=null;rd.forEach(function(d){if(best==null||R[d]>best)best=R[d]});
+  var diff=(first!=null&&lastV!=null)?lastV-first:null;
+  var h='<div class="stats"><div class="stat"><div class="k">第一次</div><div class="v num">'+(first!=null?first+"°":"--")+'</div></div>'+
+    '<div class="stat"><div class="k">最近一次</div><div class="v num">'+(lastV!=null?lastV+"°":"--")+'</div></div>'+
+    '<div class="stat"><div class="k">進步</div><div class="v num'+(diff>0?" up":"")+'">'+(diff!=null?(diff>0?"+":"")+diff+"°":"--")+'</div></div></div>';
+  // chart
+  var W=340,H=200,pl=30,pr=10,pt2=14,pb=28;
+  var maxV=0;dates.forEach(function(d){if(R[d]!=null)maxV=Math.max(maxV,R[d]);if(L[d]!=null)maxV=Math.max(maxV,L[d])});
+  var top=Math.min(180,Math.max(90,Math.ceil((maxV+10)/30)*30));
+  var x=function(i){return dates.length===1?(pl+(W-pl-pr)/2):pl+i*(W-pl-pr)/(dates.length-1)};
+  var y=function(v){return pt2+(H-pt2-pb)*(1-v/top)};
+  var s='<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="每日最大角度折線圖">';
+  for(var g=0;g<=top;g+=30){s+='<line class="grid" x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y(g)+'" y2="'+y(g)+'" stroke-width="1"/><text class="ax" x="'+(pl-6)+'" y="'+(y(g)+3)+'" text-anchor="end">'+g+'</text>'}
+  var step=Math.ceil(dates.length/6);
+  dates.forEach(function(d,i){if(i%step===0||i===dates.length-1){var p=d.split("-");s+='<text class="ax" x="'+x(i)+'" y="'+(H-10)+'" text-anchor="middle">'+(+p[1])+'/'+(+p[2])+'</text>'}});
+  function line(map,cls,dot,labels){var pts=[];dates.forEach(function(d,i){if(map[d]!=null)pts.push([x(i),y(map[d]),map[d]])});
+    if(pts.length>1)s+='<polyline class="'+cls+'" points="'+pts.map(function(p){return p[0].toFixed(1)+","+p[1].toFixed(1)}).join(" ")+'"/>';
+    pts.forEach(function(p){s+='<circle class="'+dot+'" cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="3.5"/>';if(labels&&pts.length<=12)s+='<text class="val" x="'+p[0].toFixed(1)+'" y="'+(p[1]-7).toFixed(1)+'" text-anchor="middle">'+p[2]+'</text>'})}
+  line(L,"ll","dl",false);line(R,"lr","dr",true);
+  s+='</svg>';
+  h+='<div class="chartbox">'+s+'<div class="legend"><span>右手每日最大角度</span><span class="l">左手（對照）</span></div></div>';
+  // table
+  h+='<div class="table-wrap"><table><thead><tr><th>日期</th><th>右手</th><th>左手</th><th>當天下數</th></tr></thead><tbody>';
+  dates.slice().reverse().forEach(function(d){var n=0;store.sessions.forEach(function(s){if(s.date===d&&s.exId===progEx)n+=s.reps.length});
+    h+='<tr><td>'+dateLabel(d)+'</td><td class="num">'+(R[d]!=null?R[d]+"°":"–")+'</td><td class="num">'+(L[d]!=null?L[d]+"°":"–")+'</td><td class="num">'+n+'</td></tr>'});
+  h+='</tbody></table></div>';
+  $("progBody").innerHTML=h;
+}
+
+/* ---------- tabs ---------- */
+var VIEWS=["rehab","log","progress"];
+function show(v){
+  if(VIEWS.indexOf(v)<0)v="rehab";
+  VIEWS.forEach(function(n){$("v-"+n).classList.toggle("active",n===v)});
+  document.querySelectorAll("nav.tabs button").forEach(function(b){if(b.dataset.view===v)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current")});
+  if(v==="log")renderLog();if(v==="progress"){renderProgChips();renderProgress()}
+  window.scrollTo(0,0);
+}
+document.querySelector("nav.tabs").addEventListener("click",function(e){var b=e.target.closest("button");if(!b)return;
+  var v=b.dataset.view;if(location.hash!=="#"+v)location.hash=v;else show(v)});
+window.addEventListener("hashchange",function(){show(location.hash.slice(1))});
+
+/* init */
+renderChips();renderSettings();renderPlace();renderTodayCount();renderProgChips();
+if(location.hash)show(location.hash.slice(1));
+})();
+</script>
+</body>
+</html>
